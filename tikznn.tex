@@ -1,0 +1,225 @@
+%!TEX root = main.tex
+% Usage:
+% \tikzNN[
+%   % Prefix of name
+%   name={NN},
+% 	% How the network is built (number of neurons in index layer)
+% 	nn neurons={1,2,3,4},
+%   % Default style of layer rectangles
+% 	inside layer style={fill=blue!40},
+% 	% Styles per layer (the rectangle)
+% 	layer styles={{fill=red!40},{fill=green!40}},
+% 	% Scale of whole thing
+% 	scale={1},
+% 	% Distance between neuron and layer rectangle
+% 	layer padding={0.05cm},
+% 	% How tall the layers are
+% 	layer height={3cm},
+% 	% Horisontal separation of layers
+% 	layer sep={1cm},
+% 	% Size of neurons
+% 	neuron radius={0.2cm},
+% 	% Tikz styles
+%   % Style of the connection between neurons
+% 	connection style={gray},
+% 	% Color of the neurons
+% 	neuron color={gray!50},
+% 	% Node style for neuron
+% 	neuron style={},
+%   % Args to send to \begin{scope}
+%   tikz args={},
+%   % Show the coordinate names of the layers and neurons
+%   verbose=false,
+% ]
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  NODES defined by this script  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Note that all nodes have coordinates
+%% north, south, east and west and
+%% combinations of these
+%% Rectangle of layer x:
+%% NAME-rectangle-x
+%% Connection between layer x, neuron y and layer z neuron w:
+%% NAME-con-x-y-z-w
+%% Rectangle between layer x and y:
+%% NAME-between-x-y
+%% Bounding box
+%% NAME-bb
+
+
+\makeatletter
+\newif\ifNN@hideLayerBox
+\newif\iftikzNN@verbose
+\providecommand\neuronColor{}
+\pgfkeys{
+	% /NN/connection style/.code={\pgfkeysalso{/tikz/NN/connection style/.style={#1}}},
+	/NN/.cd,
+	% See tikzhelpers for info on /.meta append tikz style
+	connection style/.meta tikz style={NN/connection style},
+	neuron style/.meta append tikz style={NN/neuron style}{fill=\nn@cfg{neuron color}},
+	inside layer style/.meta tikz style={NN/inside layer style},
+	hide layer boxes/.is if={NN@hideLayerBox},
+	user defaults/.settable style,
+	user defaults={}
+	% this layer style/.meta tikz style={NN/this layer style}
+}
+\pgfkeys{
+	/NN/factory defaults/.style={
+			/NN/.cd,
+			% TODO: these
+			% Name prefix for these tikz figures
+			name/.initial={NN},
+			input node name/.initial={NN.in},
+			output node name/.initial={NN.out},
+			% How the network is built
+			nn neurons/.initial={4,2,1},
+			% Styles per layer (the rectangle)
+			layer styles/.initial={,},
+			% Scale of whole thing
+			scale/.initial={1},
+			% Distance between neuron and layer rectangle
+			layer padding/.initial={0.05cm},
+			% How tall the layers are
+			layer height/.initial={3cm},
+			% Horisontal separation of layers
+			layer sep/.initial={1cm},
+			% Size of neurons
+			neuron radius/.initial={0.2cm},
+			% Tikz styles
+			connection style={gray},
+			% Color of the neurons
+			neuron color/.initial={gray!20},
+			% Node style for neuron
+			neuron style={},
+			% Default style of layer rectangles
+			inside layer style={fill=red!70},
+			% Args to send to tikz scope
+			tikz args/.initial={},
+      % Show the coordinate names of the layers and neurons
+			verbose/.is if={tikzNN@verbose}
+		}
+}
+
+% \tnn@nameNode[node settings]{node}
+\newcommand\tnn@nameNode[2][]{\node[#1] at (#2){#2};}
+% Command for the user to override the defaults
+\def\tikzNNDefaults{\pgfqkeys{/NN/user defaults}}
+\def\nn@cfg#1{\csname pgfk@/NN/#1\endcsname}
+\let\nn@c\nn@cfg
+\newif\ifisfirstLayer
+\newdimen\firstneuron@x
+\newcommand\tikzNN[1][]{%
+	% Read keys and set name
+	\pgfexpkeys{/NN/.cd,/NN/factory defaults,/NN/user defaults,#1}
+	\xdef\@tNN{\nn@c{name}}
+	% Do scale and shifting:
+	% \edef\scaleArgs{\nn@c{tikz args},scale=\nn@c{scale}, every node/.style={scale=\nn@c{scale}}}
+	\edef\scaleArgs{\nn@c{tikz args}, scale=\nn@c{scale},every node/.style={transform shape}}
+	\edef\scopeArgs{{scope}[\scaleArgs]}
+	\expandafter\begin\scopeArgs
+
+	% \begin{scope}
+	% First draw all nodes and such
+	\def\layerIdx{0}
+	\edef\neuronlist{\nn@c{nn neurons}}
+	% To be able to get the last element and such
+	\readlist*\neurItemList\neuronlist
+	\edef\@styleitms{\nn@c{layer styles}}
+	\readlist\layerStylesList\@styleitms
+	\providecommand\@fitnodesList{}
+	\newcommand\addfitnode[1]{\xdef\@fitnodesList{\unexpanded\expandafter{\@fitnodesList}(##1)}}
+	%% Commented below is the old bounding box (didn't work together with scaling?)
+	%% \node[inner sep=0pt,fill=none,draw=none,reset transform, fit={(0,0) (\the\dimexpr\neurItemListlen*\nn@c{layer padding}\relax,\nn@c{layer height})}] (NN-BB);
+
+	\foreach\noNeurons in \neuronlist{
+		\edef\layerIdxOne{\the\numexpr\layerIdx+1}
+		\let\nextLayerIdx\layerIdxOne
+		%% All neurons have same X-position in a given layer
+		\pgfmathsetlengthmacro\neurX{\nn@c{layer sep}*\layerIdx}
+		%% Now figure out how much spacing between neurons
+		\pgfmathsetlengthmacro\neuronsep{\nn@c{layer height}/\noNeurons}
+		%% Draw rectangle around neurons
+		%% Fist set rectangle style for this layer based in the layer styles list
+		\pgfkeys{/tikz/NN/this layer style/.style={}}
+		\ifnum\layerIdx<\layerStylesListlen\relax
+			\edef\thislayerstyleargs{{/tikz/NN/this layer style/.style=\layerStylesList[\layerIdxOne]}}
+			\expandafter\pgfkeys\thislayerstyleargs
+		\fi
+		%% If the `hide layer boxes` option is NOT given
+		\ifNN@hideLayerBox\else
+			\draw[NN/inside layer style, NN/this layer style]%
+			($(\neurX-\nn@c{neuron radius}-\nn@c{layer padding}, 0)$) rectangle node[fitting node](\@tNN-rectangle-\layerIdx){} ++($(2*\nn@c{neuron radius}+2*\nn@c{layer padding},\neuronsep*\noNeurons)$);
+			\ifnum\layerIdx > 0\relax
+				\edef\prevLayerIdx{\the\numexpr\layerIdx-1}
+				% Invisible rectangle in between layers
+				\draw[draw=none,fill=none](\@tNN-rectangle-\prevLayerIdx.south east) rectangle node[fitting node](\@tNN-between-\prevLayerIdx-\layerIdx){} (\@tNN-rectangle-\layerIdx.north west);
+			\fi
+			\addfitnode{\@tNN-rectangle-\layerIdx}
+			% Show names of coordinates if verbose
+			\iftikzNN@verbose
+				\begin{scope}[scale={0.2},every node/.style={scale=0.2}]
+					\ifnum\layerIdx > 0\relax%
+            \tnn@nameNode[above]{\@tNN-between-\prevLayerIdx-\layerIdx.north};
+            \tnn@nameNode[below=2em]{\@tNN-between-\prevLayerIdx-\layerIdx.south}
+            \tnn@nameNode[rotate=-90]{\@tNN-between-\prevLayerIdx-\layerIdx.center};
+					\fi
+					\tnn@nameNode[below]{\@tNN-rectangle-\layerIdx.south};
+				\end{scope}
+			\fi
+		\fi
+		% \node[red] at ($(\neurX-\nn@c{neuron radius}, 0)$){X};
+		\foreach\neurno in {1,...,\noNeurons}{
+				%% Get neuron index
+				\edef\neurIdx{\the\numexpr\neurno-1}
+				%% Calculate Y-coordinate of neuron
+				\pgfmathsetlengthmacro\neurY{\neuronsep*\neurIdx+\neuronsep/2}
+				%% Draw neuron and create node
+				\node(\@tNN-neur-\layerIdx-\neurIdx) at (\neurX,\neurY){};
+				\draw[NN/neuron style,fill=\nn@cfg{neuron color}](\@tNN-neur-\layerIdx-\neurIdx) circle (\nn@c{neuron radius});
+				\addfitnode{\@tNN-neur-\layerIdx-\neurIdx}
+				\iftikzNN@verbose
+					\node[below=\nn@c{neuron radius}/2,scale=0.2] at (\@tNN-neur-\layerIdx-\neurIdx.south){\@tNN-neur-\layerIdx-\neurIdx};
+				\fi
+			}
+		\xdef\layerIdx{\the\numexpr\layerIdx+1}
+	}
+	\edef\lastLayer{\the\numexpr\layerIdx-1}
+	\edef\lastNeuron{\the\numexpr\neurItemList[-1]-1}
+	% \draw(NNBB.north west) rectangle (NNBB.south east);
+	\edef\numLayers{\the\numexpr\layerIdx+1}
+	\edef\numSourceLayers{\the\numexpr\layerIdx-2}
+	%% Connect all layers
+	%% Draw on background
+	\begin{pgfonlayer}{background}
+		%% The layersdict will be 1-indexed
+		\readlist\layersdict\neuronlist
+		\foreach\srcLayer in {0,...,\numSourceLayers}{
+				\edef\dstLayer{\the\numexpr\srcLayer+1}
+				\edef\numNeuronsInSrcLayer{\layersdict[\the\numexpr\srcLayer+1]}
+				\edef\numNeuronsInDstLayer{\layersdict[\the\numexpr\srcLayer+2]}
+				\foreach\srcNeuron in {0,...,\the\numexpr\numNeuronsInSrcLayer-1}{
+						\foreach\dstNeuron in {0,...,\the\numexpr\numNeuronsInDstLayer-1}{
+								\draw[NN/connection style](\@tNN-neur-\srcLayer-\srcNeuron) -- node(\@tNN-con-\srcLayer-\srcNeuron-\dstLayer-\dstNeuron){} (\@tNN-neur-\dstLayer-\dstNeuron);
+							}
+					}
+			}
+	\end{pgfonlayer}
+	%% Make bounding box coordinate
+	%% Calculate width and height of the NN
+	\pgfmathsetlengthmacro\Lnnwid{(2*\nn@c{neuron radius}+2*\nn@c{layer padding})+(\neurItemListlen-1)*\nn@c{layer sep}}
+	\pgfmathsetlengthmacro\Lnnheight{\nn@c{layer height}}
+	\xdef\nnwid{\the\dimexpr\Lnnwid-\nn@c{neuron radius}-\nn@c{layer padding}}
+	\xdef\nnheight{\Lnnheight}
+	% Obtain the position of the very first node
+	\pgfextractx{\firstneuron@x}{\pgfpointanchor{\@tNN-neur-0-0}{center}}%
+	\xdef\nnOriginX{\the\dimexpr\firstneuron@x-\nn@c{neuron radius}-\nn@c{layer padding}}
+	\xdef\nnOrigin{\nnOriginX,0}
+	\coordinate(\@tNN-origin) at (\nnOrigin);
+	\coordinate(\@tNN-topRight) at (\nnwid,\nnheight);
+	\end{scope}
+	\draw[fill=none,draw=none] (\@tNN-origin) rectangle node[fitting node](\@tNN-bb){} (\@tNN-topRight);
+}

@@ -1,0 +1,40 @@
+\documentclass{standalone}
+\input{tikzhelpers}
+\input{tikznn}
+\begin{document}
+\begin{tikzpicture}
+% Below you see the default arguments
+% \tikzNN can be called without any arguments
+\tikzNN[
+  % Prefix of name
+  name={NN},
+	% How the network is built (number of neurons in index layer)
+	nn neurons={1,2,3,4},
+  % Default style of layer rectangles
+	inside layer style={fill=blue!40},
+	% Styles per layer (the rectangle)
+	layer styles={{fill=red!40},{fill=green!40}},
+	% Scale of whole thing
+	scale={1},
+	% Distance between neuron and layer rectangle
+	layer padding={0.05cm},
+	% How tall the layers are
+	layer height={3cm},
+	% Horisontal separation of layers
+	layer sep={1cm},
+	% Size of neurons
+	neuron radius={0.2cm},
+	% Tikz styles
+  % Style of the connection between neurons
+	connection style={gray},
+	% Color of the neurons
+	neuron color={gray!50},
+	% Node style for neuron
+	neuron style={},
+  % Args to send to \begin{scope}
+  tikz args={},
+  % Show the coordinate names of the layers and neurons
+  verbose=false,
+]
+\end{tikzpicture}
+\end{document}

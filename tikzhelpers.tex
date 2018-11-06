@@ -1,0 +1,87 @@
+%!TEX root = example.tex
+\makeatletter
+\usepackage{tikz}
+\usepackage{listofitems}
+\usepackage{pgfplots}
+\usepackage{pgf,tikz}
+\usepackage{mathrsfs}
+\pgfplotsset{compat=1.16}
+\let\dlog\@latex@warning
+\newcommand\calcdef[2]{
+	\pgfmathparse{#2}\xdef#1{\pgfmathresult}
+}
+\def\pgfexpkeys#1{
+\edef\expanded@keys{{#1}}
+\expandafter\pgfkeys\expanded@keys
+}
+% /NN/neurons/.meta tikz style={tikz/path}
+% Now, when /NN/neurons={grey} it also sets /tiks/path/.style={grey}.
+\pgfkeys{%
+	/handlers/.meta tikz style/.code={%
+			\pgfkeys{\pgfkeyscurrentpath/.code={\pgfkeysalso{/tikz/#1/.style={##1}}}}
+  },
+  % /NN/neurons/.meta append tikz style={tikz/path}{base style}
+  % Now, when /NN/neurons={grey} it also sets /tiks/path/.append style={grey}.
+  /handlers/.meta append tikz style/.code 2 args={%
+		  \pgfkeys{\pgfkeyscurrentpath/.code={\pgfkeys{/tikz/#1/.style={#2}}\pgfkeysalso{/tikz/#1/.append style={##1}}}}
+  },
+  /handlers/.settable style/.code={\pgfkeys{\pgfkeyscurrentpath/.code=\pgfkeysalso{##1}}}
+}
+\pgfdeclarelayer{foreground}
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{wallpaper}
+\pgfdeclarelayer{wall}
+\pgfsetlayers{wall,wallpaper,background,main,foreground}   %% some additional layers for demo
+\usetikzlibrary{fit,calc}
+\tikzset{
+	fitting node/.style={
+			inner sep=0pt,
+			fill=none,
+			draw=none,
+			reset transform,
+			fit={(\pgf@pathminx,\pgf@pathminy) (\pgf@pathmaxx,\pgf@pathmaxy)}
+		},
+	reset transform/.code={\pgftransformreset},
+	set dim/.style={insert path={%
+					coordinate [pos=0] (tmpa)
+					coordinate [pos=1] (tmpb)
+					\pgfextra{%
+						\pgfextractx{\pgf@x}{\pgfpointanchor{tmpa}{center}}
+						\pgfextracty{\pgf@y}{\pgfpointanchor{tmpa}{center}}
+						\pgf@xa\pgf@x %
+						\pgf@ya\pgf@y %
+						\pgfextractx{\pgf@x}{\pgfpointanchor{tmpb}{center}}
+						\pgfextracty{\pgf@y}{\pgfpointanchor{tmpb}{center}}
+						\pgf@xb\pgf@x %
+						\pgf@yb\pgf@y %
+						\advance\pgf@xb by -\pgf@xa
+						\advance\pgf@yb by -\pgf@ya
+					}%
+				}, minimum width=\pgf@xb,minimum height=\pgf@yb
+		}%
+}%
+\tikzset{
+    partial ellipse/.style args={#1:#2:#3}{
+        insert path={+ (#1:#3) arc (#1:#2:#3)}
+    }
+}
+\usetikzlibrary{arrows}
+% \pagestyle{empty}
+
+\newdimen\tmp@tikz@x
+\newdimen\tmp@tikz@y
+% Extract x and y components from coordinate
+% \extractCoords[anchor]{COORDINATE}{outputPrefix}
+% Defines \outputPrefix@x, \outputPrefix@y and \outputPrefix@xy -> x,y
+\newcommand\extractCoords[3][center]{%
+	\pgfextractx{\tmp@tikz@x}{\pgfpointanchor{#2}{#1}}%
+	\pgfextracty{\tmp@tikz@y}{\pgfpointanchor{#2}{#1}}%
+	\expandafter\xdef\csname #3@xy\endcsname{\the\dimexpr\tmp@tikz@x,\the\dimexpr\tmp@tikz@y}%
+	\expandafter\xdef\csname #3@x\endcsname{\the\dimexpr\tmp@tikz@x}%
+	\expandafter\xdef\csname #3@y\endcsname{\the\dimexpr\tmp@tikz@y}%
+}
+\def\excoord(#1){%
+\edef\coordname{(#1)}%
+\expandafter\coordinate\coordname%
+}
+\makeatother
