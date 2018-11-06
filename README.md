@@ -1,4 +1,6 @@
 # tikzNN
+Please cite usage of this figure with the web address of this git repo
+
 TikZ code of feed forward neural network.
 See the [example.pdf](https://github.com/Strauman/tikzNN/blob/master/example.pdf) file for an example.
 [example.tex](https://github.com/Strauman/tikzNN/blob/master/example.tex) contains the code for the above example.
