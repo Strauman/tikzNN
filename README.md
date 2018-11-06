@@ -7,3 +7,5 @@ anchor. E.g. you could do `\node at (NN-rectangle-1.south east){X}`, which would
 corner of the second layer.
 
 Set `verbose=false` to remove all the annotations.
+
+![Example png](https://github.com/Strauman/tikzNN/raw/master/example.png)
