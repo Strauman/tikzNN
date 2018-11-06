@@ -8,4 +8,6 @@ corner of the second layer.
 
 Set `verbose=false` to remove all the annotations.
 
+Please cite usage of this figure with the web address of this git repo
+
 ![Example png](https://github.com/Strauman/tikzNN/raw/master/example.png)
