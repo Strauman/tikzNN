@@ -42,30 +42,8 @@
 			fit={(\pgf@pathminx,\pgf@pathminy) (\pgf@pathmaxx,\pgf@pathmaxy)}
 		},
 	reset transform/.code={\pgftransformreset},
-	set dim/.style={insert path={%
-					coordinate [pos=0] (tmpa)
-					coordinate [pos=1] (tmpb)
-					\pgfextra{%
-						\pgfextractx{\pgf@x}{\pgfpointanchor{tmpa}{center}}
-						\pgfextracty{\pgf@y}{\pgfpointanchor{tmpa}{center}}
-						\pgf@xa\pgf@x %
-						\pgf@ya\pgf@y %
-						\pgfextractx{\pgf@x}{\pgfpointanchor{tmpb}{center}}
-						\pgfextracty{\pgf@y}{\pgfpointanchor{tmpb}{center}}
-						\pgf@xb\pgf@x %
-						\pgf@yb\pgf@y %
-						\advance\pgf@xb by -\pgf@xa
-						\advance\pgf@yb by -\pgf@ya
-					}%
-				}, minimum width=\pgf@xb,minimum height=\pgf@yb
-		}%
 }%
-\tikzset{
-    partial ellipse/.style args={#1:#2:#3}{
-        insert path={+ (#1:#3) arc (#1:#2:#3)}
-    }
-}
-\usetikzlibrary{arrows}
+% \usetikzlibrary{arrows}
 % \pagestyle{empty}
 
 \newdimen\tmp@tikz@x
